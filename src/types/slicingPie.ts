@@ -18,6 +18,16 @@ export interface Category {
   emoji: string;
 }
 
+export interface FounderSnapshot {
+  marketSalary: number;
+  paidSalary: number;
+}
+
+export interface CategorySnapshot {
+  multiplier: number;
+  commissionPercent?: number;
+}
+
 export interface LedgerEntry {
   id: string;
   founderId: string;
@@ -25,6 +35,9 @@ export interface LedgerEntry {
   amount: number;
   description: string;
   createdAt: Date;
+  // Snapshots captured at time of entry creation
+  founderSnapshot: FounderSnapshot;
+  categorySnapshot: CategorySnapshot;
 }
 
 export interface FounderCalculations {

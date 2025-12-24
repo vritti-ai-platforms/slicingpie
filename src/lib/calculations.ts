@@ -8,7 +8,7 @@ export function calculateFounderSlices(
 ): FounderCalculations {
   const founderEntries = entries.filter(e => e.founderId === founder.id);
   
-  // Calculate hours worked
+  // Calculate hours worked (sum of time entries)
   const hoursWorked = founderEntries
     .filter(e => e.categoryId === 'time')
     .reduce((sum, e) => sum + e.amount, 0);
@@ -17,45 +17,61 @@ export function calculateFounderSlices(
   const workingMonths = Math.min(hoursWorked / HOURS_PER_MONTH, TOTAL_PERIOD_MONTHS);
   const nonWorkingMonths = Math.max(TOTAL_PERIOD_MONTHS - workingMonths, 0);
   
-  // Hourly rates
+  // Current hourly rates (for display)
   const hourlyMarketRate = founder.marketSalary / HOURS_PER_MONTH;
   const hourlyPaidRate = founder.paidSalary / HOURS_PER_MONTH;
   const hourlyGap = hourlyMarketRate - hourlyPaidRate;
   
-  // Cash calculations
-  const cashInvested = founderEntries
-    .filter(e => e.categoryId === 'cash')
-    .reduce((sum, e) => sum + e.amount, 0);
+  // Cash calculations - use snapshot multipliers from each entry
+  const cashEntries = founderEntries.filter(e => e.categoryId === 'cash');
+  const cashInvested = cashEntries.reduce((sum, e) => sum + e.amount, 0);
   const cashDraw = nonWorkingMonths * LIVING_BENEFIT_PER_MONTH;
   const netCash = Math.max(cashInvested - cashDraw, 0);
   
-  // Salary gap value
+  // Calculate cash slices using snapshot multipliers
+  const cashSlices = cashEntries.reduce((sum, e) => {
+    const multiplier = e.categorySnapshot.multiplier;
+    return sum + e.amount * multiplier;
+  }, 0);
+  // Adjust for cash draw using current multiplier
+  const currentCashMultiplier = categories.find(c => c.id === 'cash')?.multiplier ?? 4;
+  const adjustedCashSlices = Math.max(cashSlices - (cashDraw * currentCashMultiplier), 0);
+  
+  // Time slices - use snapshot salary gap (hourlyGap × hours × multiplier per entry)
+  const timeEntries = founderEntries.filter(e => e.categoryId === 'time');
+  const timeSlices = timeEntries.reduce((sum, e) => {
+    const snapshot = e.founderSnapshot;
+    const snapshotHourlyGap = (snapshot.marketSalary - snapshot.paidSalary) / HOURS_PER_MONTH;
+    const salaryGapForEntry = snapshotHourlyGap * e.amount;
+    const multiplier = e.categorySnapshot.multiplier;
+    return sum + salaryGapForEntry * multiplier;
+  }, 0);
+  
+  // Salary gap value for display (using current config)
   const salaryGapValue = hourlyGap * hoursWorked;
   
-  // Revenue and expenses
-  const revenueTotal = founderEntries
-    .filter(e => e.categoryId === 'revenue')
-    .reduce((sum, e) => sum + e.amount, 0);
-  const expensesTotal = founderEntries
-    .filter(e => e.categoryId === 'expenses')
-    .reduce((sum, e) => sum + e.amount, 0);
+  // Revenue slices - use snapshot multipliers and commission
+  const revenueEntries = founderEntries.filter(e => e.categoryId === 'revenue');
+  const revenueTotal = revenueEntries.reduce((sum, e) => sum + e.amount, 0);
+  const revenueSlices = revenueEntries.reduce((sum, e) => {
+    const multiplier = e.categorySnapshot.multiplier;
+    const commission = (e.categorySnapshot.commissionPercent ?? 10) / 100;
+    return sum + e.amount * commission * multiplier;
+  }, 0);
   
-  // Get category multipliers
-  const cashMultiplier = categories.find(c => c.id === 'cash')?.multiplier ?? 4;
-  const timeMultiplier = categories.find(c => c.id === 'time')?.multiplier ?? 2;
-  const revenueCategory = categories.find(c => c.id === 'revenue');
-  const revenueMultiplier = revenueCategory?.multiplier ?? 8;
-  const revenueCommission = (revenueCategory?.commissionPercent ?? 10) / 100;
-  const expensesMultiplier = categories.find(c => c.id === 'expenses')?.multiplier ?? 4;
-  
-  // Calculate slices - Time now includes salary gap (hourlyGap × hours × multiplier)
-  const timeSlices = salaryGapValue * timeMultiplier;
+  // Expenses slices - use snapshot multipliers
+  const expenseEntries = founderEntries.filter(e => e.categoryId === 'expenses');
+  const expensesTotal = expenseEntries.reduce((sum, e) => sum + e.amount, 0);
+  const expensesSlices = expenseEntries.reduce((sum, e) => {
+    const multiplier = e.categorySnapshot.multiplier;
+    return sum + e.amount * multiplier;
+  }, 0);
   
   const slices = {
-    cash: netCash * cashMultiplier,
+    cash: adjustedCashSlices,
     time: timeSlices,
-    revenue: revenueTotal * revenueCommission * revenueMultiplier,
-    expenses: expensesTotal * expensesMultiplier,
+    revenue: revenueSlices,
+    expenses: expensesSlices,
     total: 0,
   };
   slices.total = slices.cash + slices.time + slices.revenue + slices.expenses;

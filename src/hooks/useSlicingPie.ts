@@ -43,8 +43,13 @@ export function useSlicingPie() {
     );
   }, []);
 
-  // Entry operations
+  // Entry operations - capture founder and category config at time of entry
   const addEntry = useCallback((founderId: string, categoryId: CategoryId, amount: number, description: string) => {
+    const founder = founders.find(f => f.id === founderId);
+    const category = categories.find(c => c.id === categoryId);
+    
+    if (!founder || !category) return;
+    
     const newEntry: LedgerEntry = {
       id: String(Date.now()),
       founderId,
@@ -52,9 +57,17 @@ export function useSlicingPie() {
       amount,
       description,
       createdAt: new Date(),
+      founderSnapshot: {
+        marketSalary: founder.marketSalary,
+        paidSalary: founder.paidSalary,
+      },
+      categorySnapshot: {
+        multiplier: category.multiplier,
+        commissionPercent: category.commissionPercent,
+      },
     };
     setEntries(prev => [newEntry, ...prev]);
-  }, []);
+  }, [founders, categories]);
 
   const removeEntry = useCallback((id: string) => {
     setEntries(prev => prev.filter(e => e.id !== id));
