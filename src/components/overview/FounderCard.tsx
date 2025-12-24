@@ -15,9 +15,9 @@ export function FounderCard({ founder, calculations, categories, totalSlices }: 
   const categoryBreakdown = [
     {
       category: categories.find(c => c.id === 'cash')!,
-      input: formatCurrency(calculations.netCash),
+      input: formatCurrency(calculations.cashInvested),
       multiplier: `${categories.find(c => c.id === 'cash')?.multiplier}×`,
-      formula: `${formatCurrency(calculations.netCash)} × ${categories.find(c => c.id === 'cash')?.multiplier}`,
+      formula: `${formatCurrency(calculations.cashInvested)} × ${categories.find(c => c.id === 'cash')?.multiplier}`,
       slices: calculations.slices.cash,
     },
     {
@@ -101,16 +101,10 @@ export function FounderCard({ founder, calculations, categories, totalSlices }: 
         <h4 className="text-sm font-semibold text-amber-800 mb-3">Auto Calculations</h4>
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
-            <p className="text-muted-foreground">Cash Draw (Living Benefit)</p>
-            <p className="font-medium text-amber-700">{formatCurrency(calculations.cashDraw)}</p>
-            <p className="text-xs text-muted-foreground">{formatNumber(calculations.nonWorkingMonths, 1)} × ₹20,000</p>
+            <p className="text-muted-foreground">Cash Invested</p>
+            <p className="financial-number font-semibold text-green-700">{formatCurrency(calculations.cashInvested)}</p>
           </div>
           <div>
-            <p className="text-muted-foreground">Net Cash Available</p>
-            <p className="financial-number font-semibold text-green-700">{formatCurrency(calculations.netCash)}</p>
-            <p className="text-xs text-muted-foreground">{formatCurrency(calculations.cashInvested)} - {formatCurrency(calculations.cashDraw)}</p>
-          </div>
-          <div className="col-span-2">
             <p className="text-muted-foreground">Total Salary Gap Value</p>
             <p className="financial-number font-semibold">{formatCurrency(calculations.salaryGapValue)}</p>
             <p className="text-xs text-muted-foreground">₹{formatNumber(calculations.hourlyGap, 2)} × {formatNumber(calculations.hoursWorked)} hrs</p>

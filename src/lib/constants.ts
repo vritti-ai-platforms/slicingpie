@@ -2,7 +2,6 @@ import { Founder, Category } from '@/types/slicingPie';
 
 export const HOURS_PER_MONTH = 2000;
 export const TOTAL_PERIOD_MONTHS = 12;
-export const LIVING_BENEFIT_PER_MONTH = 20000;
 
 export const DEFAULT_FOUNDERS: Founder[] = [
   { id: '1', name: 'Shashank', marketSalary: 150000, paidSalary: 5000 },
