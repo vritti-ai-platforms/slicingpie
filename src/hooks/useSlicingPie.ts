@@ -83,7 +83,9 @@ export function useSlicingPie() {
         categoryId: e.category_id as CategoryId,
         amount: Number(e.amount),
         description: e.description || '',
+        date: new Date(e.date),
         createdAt: new Date(e.created_at),
+        createdBy: e.created_by,
         founderSnapshot: e.founder_snapshot as { marketSalary: number; paidSalary: number },
         categorySnapshot: e.category_snapshot as { multiplier: number; commissionPercent?: number },
       })));
@@ -241,10 +243,10 @@ export function useSlicingPie() {
   }, [isAdmin, toast]);
 
   // Entry operations
-  const addEntry = useCallback(async (founderId: string, categoryId: CategoryId, amount: number, description: string) => {
+  const addEntry = useCallback(async (founderId: string, categoryId: CategoryId, amount: number, description: string, date: Date) => {
     const founder = founders.find(f => f.id === founderId);
     const category = categories.find(c => c.id === categoryId);
-    
+
     if (!founder || !category || !user) return;
 
     const founderSnapshot = {
@@ -264,6 +266,7 @@ export function useSlicingPie() {
         category_id: categoryId,
         amount,
         description,
+        date: date.toISOString().split('T')[0],
         founder_snapshot: founderSnapshot,
         category_snapshot: categorySnapshot,
         created_by: user.id,
@@ -282,11 +285,13 @@ export function useSlicingPie() {
       categoryId,
       amount,
       description,
+      date: new Date(data.date),
       createdAt: new Date(data.created_at),
+      createdBy: user.id,
       founderSnapshot,
       categorySnapshot,
     };
-    
+
     setEntries(prev => [newEntry, ...prev]);
     toast({ title: 'Entry added', description: 'Ledger entry has been recorded.' });
   }, [founders, categories, user, toast]);
@@ -336,6 +341,7 @@ export function useSlicingPie() {
     inputCategories,
     loading,
     isAdmin,
+    currentUserId: user?.id ?? null,
     addFounder,
     updateFounder,
     removeFounder,

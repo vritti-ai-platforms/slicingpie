@@ -4,12 +4,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Plus, CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface AddEntryFormProps {
   founders: Founder[];
   categories: Category[];
-  onAddEntry: (founderId: string, categoryId: CategoryId, amount: number, description: string) => void;
+  onAddEntry: (founderId: string, categoryId: CategoryId, amount: number, description: string, date: Date) => void;
 }
 
 export function AddEntryForm({ founders, categories, onAddEntry }: AddEntryFormProps) {
@@ -17,6 +21,7 @@ export function AddEntryForm({ founders, categories, onAddEntry }: AddEntryFormP
   const [categoryId, setCategoryId] = useState<CategoryId | ''>('');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
+  const [date, setDate] = useState<Date>(new Date());
 
   const selectedCategory = categories.find(c => c.id === categoryId);
 
@@ -27,7 +32,7 @@ export function AddEntryForm({ founders, categories, onAddEntry }: AddEntryFormP
     const numAmount = parseFloat(amount);
     if (isNaN(numAmount) || numAmount <= 0) return;
 
-    onAddEntry(founderId, categoryId as CategoryId, numAmount, description);
+    onAddEntry(founderId, categoryId as CategoryId, numAmount, description, date);
     setAmount('');
     setDescription('');
   };
@@ -45,8 +50,8 @@ export function AddEntryForm({ founders, categories, onAddEntry }: AddEntryFormP
   return (
     <form onSubmit={handleSubmit} className="card-elevated p-6">
       <h3 className="text-lg font-semibold mb-4">Add New Contribution</h3>
-      
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
         {/* Founder Select */}
         <div className="space-y-2">
           <Label htmlFor="founder">Founder</Label>
@@ -94,9 +99,36 @@ export function AddEntryForm({ founders, categories, onAddEntry }: AddEntryFormP
           />
         </div>
 
+        {/* Date */}
+        <div className="space-y-2">
+          <Label>Date</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full justify-start text-left font-normal bg-card",
+                  !date && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {date ? format(date, "dd MMM yyyy") : <span>Pick a date</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={date}
+                onSelect={(d) => d && setDate(d)}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+
         {/* Description */}
         <div className="space-y-2">
-          <Label htmlFor="description">Description (optional)</Label>
+          <Label htmlFor="description">Description</Label>
           <Input
             id="description"
             placeholder="Add a note..."
@@ -107,8 +139,8 @@ export function AddEntryForm({ founders, categories, onAddEntry }: AddEntryFormP
 
         {/* Submit */}
         <div className="flex items-end">
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             className="w-full"
             disabled={!founderId || !categoryId || !amount}
           >

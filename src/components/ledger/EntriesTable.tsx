@@ -12,9 +12,11 @@ interface EntriesTableProps {
   founders: Founder[];
   categories: Category[];
   onRemoveEntry: (id: string) => void;
+  currentUserId: string | null;
+  isAdmin: boolean;
 }
 
-export function EntriesTable({ entries, founders, categories, onRemoveEntry }: EntriesTableProps) {
+export function EntriesTable({ entries, founders, categories, onRemoveEntry, currentUserId, isAdmin }: EntriesTableProps) {
   const [founderFilter, setFounderFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
@@ -88,7 +90,7 @@ export function EntriesTable({ entries, founders, categories, onRemoveEntry }: E
             {filteredEntries.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">
-                  {entries.length === 0 
+                  {entries.length === 0
                     ? 'No entries yet. Add your first contribution above.'
                     : 'No entries match the current filters.'}
                 </td>
@@ -96,10 +98,11 @@ export function EntriesTable({ entries, founders, categories, onRemoveEntry }: E
             ) : (
               filteredEntries.map(entry => {
                 const category = getCategory(entry.categoryId);
+                const canDelete = isAdmin || entry.createdBy === currentUserId;
                 return (
                   <tr key={entry.id} className="hover:bg-muted/30 transition-colors">
                     <td className="px-4 py-3 text-sm">
-                      {format(new Date(entry.createdAt), 'dd MMM yyyy, HH:mm')}
+                      {format(new Date(entry.date), 'dd MMM yyyy')}
                     </td>
                     <td className="px-4 py-3 font-medium">{getFounderName(entry.founderId)}</td>
                     <td className="px-4 py-3">
@@ -112,14 +115,16 @@ export function EntriesTable({ entries, founders, categories, onRemoveEntry }: E
                       {entry.description || '—'}
                     </td>
                     <td className="px-4 py-3">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onRemoveEntry(entry.id)}
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {canDelete && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => onRemoveEntry(entry.id)}
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </td>
                   </tr>
                 );

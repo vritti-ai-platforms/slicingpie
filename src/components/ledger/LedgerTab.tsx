@@ -6,11 +6,13 @@ interface LedgerTabProps {
   founders: Founder[];
   categories: Category[];
   entries: LedgerEntry[];
-  onAddEntry: (founderId: string, categoryId: CategoryId, amount: number, description: string) => void;
+  onAddEntry: (founderId: string, categoryId: CategoryId, amount: number, description: string, date: Date) => void;
   onRemoveEntry: (id: string) => void;
+  currentUserId: string | null;
+  isAdmin: boolean;
 }
 
-export function LedgerTab({ founders, categories, entries, onAddEntry, onRemoveEntry }: LedgerTabProps) {
+export function LedgerTab({ founders, categories, entries, onAddEntry, onRemoveEntry, currentUserId, isAdmin }: LedgerTabProps) {
   // Filter to input categories only (exclude auto-calculated)
   const inputCategories = categories.filter(c => !c.isAutoCalculated);
 
@@ -21,7 +23,7 @@ export function LedgerTab({ founders, categories, entries, onAddEntry, onRemoveE
         categories={inputCategories}
         onAddEntry={onAddEntry}
       />
-      
+
       <section>
         <h3 className="text-lg font-semibold mb-4">Transaction History</h3>
         <EntriesTable
@@ -29,6 +31,8 @@ export function LedgerTab({ founders, categories, entries, onAddEntry, onRemoveE
           founders={founders}
           categories={categories}
           onRemoveEntry={onRemoveEntry}
+          currentUserId={currentUserId}
+          isAdmin={isAdmin}
         />
       </section>
     </div>

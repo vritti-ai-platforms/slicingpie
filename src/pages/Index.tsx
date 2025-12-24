@@ -23,6 +23,7 @@ const Index = () => {
     totals,
     inputCategories,
     loading: dataLoading,
+    currentUserId,
     addFounder,
     updateFounder,
     removeFounder,
@@ -94,6 +95,8 @@ const Index = () => {
             entries={entries}
             onAddEntry={addEntry}
             onRemoveEntry={removeEntry}
+            currentUserId={currentUserId}
+            isAdmin={isAdmin}
           />
         )}
         

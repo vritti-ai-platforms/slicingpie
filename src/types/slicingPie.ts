@@ -34,7 +34,9 @@ export interface LedgerEntry {
   categoryId: CategoryId;
   amount: number;
   description: string;
+  date: Date;
   createdAt: Date;
+  createdBy: string | null;
   // Snapshots captured at time of entry creation
   founderSnapshot: FounderSnapshot;
   categorySnapshot: CategorySnapshot;
