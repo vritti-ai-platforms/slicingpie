@@ -1,6 +1,6 @@
 import { Founder, Category } from '@/types/slicingPie';
 
-export const HOURS_PER_MONTH = 2000;
+export const HOURS_PER_MONTH = 189;
 export const TOTAL_PERIOD_MONTHS = 12;
 
 export const DEFAULT_FOUNDERS: Founder[] = [
