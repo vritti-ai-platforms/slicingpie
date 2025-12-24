@@ -1,5 +1,5 @@
 import { Founder, Category, LedgerEntry, FounderCalculations } from '@/types/slicingPie';
-import { HOURS_PER_MONTH, TOTAL_PERIOD_MONTHS, LIVING_BENEFIT_PER_MONTH } from './constants';
+import { HOURS_PER_MONTH, TOTAL_PERIOD_MONTHS } from './constants';
 
 export function calculateFounderSlices(
   founder: Founder,
@@ -25,17 +25,12 @@ export function calculateFounderSlices(
   // Cash calculations - use snapshot multipliers from each entry
   const cashEntries = founderEntries.filter(e => e.categoryId === 'cash');
   const cashInvested = cashEntries.reduce((sum, e) => sum + e.amount, 0);
-  const cashDraw = nonWorkingMonths * LIVING_BENEFIT_PER_MONTH;
-  const netCash = Math.max(cashInvested - cashDraw, 0);
   
   // Calculate cash slices using snapshot multipliers
   const cashSlices = cashEntries.reduce((sum, e) => {
     const multiplier = e.categorySnapshot.multiplier;
     return sum + e.amount * multiplier;
   }, 0);
-  // Adjust for cash draw using current multiplier
-  const currentCashMultiplier = categories.find(c => c.id === 'cash')?.multiplier ?? 4;
-  const adjustedCashSlices = Math.max(cashSlices - (cashDraw * currentCashMultiplier), 0);
   
   // Time slices - use snapshot salary gap (hourlyGap × hours × multiplier per entry)
   const timeEntries = founderEntries.filter(e => e.categoryId === 'time');
@@ -68,7 +63,7 @@ export function calculateFounderSlices(
   }, 0);
   
   const slices = {
-    cash: adjustedCashSlices,
+    cash: cashSlices,
     time: timeSlices,
     revenue: revenueSlices,
     expenses: expensesSlices,
@@ -85,8 +80,6 @@ export function calculateFounderSlices(
     hourlyPaidRate,
     hourlyGap,
     cashInvested,
-    cashDraw,
-    netCash,
     salaryGapValue,
     revenueTotal,
     expensesTotal,

@@ -49,8 +49,6 @@ export interface FounderCalculations {
   hourlyPaidRate: number;
   hourlyGap: number;
   cashInvested: number;
-  cashDraw: number;
-  netCash: number;
   salaryGapValue: number;
   revenueTotal: number;
   expensesTotal: number;
