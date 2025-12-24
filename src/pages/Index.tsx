@@ -4,6 +4,7 @@ import { useSlicingPie } from '@/hooks/useSlicingPie';
 import { Navigation } from '@/components/Navigation';
 import { OverviewTab } from '@/components/overview/OverviewTab';
 import { LedgerTab } from '@/components/ledger/LedgerTab';
+import { ForecastTab } from '@/components/forecast/ForecastTab';
 import { SettingsTab } from '@/components/settings/SettingsTab';
 
 const Index = () => {
@@ -45,6 +46,13 @@ const Index = () => {
             entries={entries}
             onAddEntry={addEntry}
             onRemoveEntry={removeEntry}
+          />
+        )}
+        
+        {activeTab === 'forecast' && (
+          <ForecastTab
+            founders={founders}
+            categories={categories}
           />
         )}
         

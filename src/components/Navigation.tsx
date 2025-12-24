@@ -1,5 +1,5 @@
 import { TabId } from '@/types/slicingPie';
-import { BarChart3, BookOpen, Settings } from 'lucide-react';
+import { BarChart3, BookOpen, Settings, TrendingUp } from 'lucide-react';
 
 interface NavigationProps {
   activeTab: TabId;
@@ -9,6 +9,7 @@ interface NavigationProps {
 const tabs: { id: TabId; label: string; icon: React.ReactNode }[] = [
   { id: 'overview', label: 'Overview', icon: <BarChart3 className="h-4 w-4" /> },
   { id: 'ledger', label: 'Ledger', icon: <BookOpen className="h-4 w-4" /> },
+  { id: 'forecast', label: 'Forecast', icon: <TrendingUp className="h-4 w-4" /> },
   { id: 'settings', label: 'Settings', icon: <Settings className="h-4 w-4" /> },
 ];
 

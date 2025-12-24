@@ -61,4 +61,4 @@ export interface FounderCalculations {
   };
 }
 
-export type TabId = 'overview' | 'ledger' | 'settings';
+export type TabId = 'overview' | 'ledger' | 'forecast' | 'settings';
