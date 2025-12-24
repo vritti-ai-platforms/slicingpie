@@ -11,9 +11,10 @@ interface FounderSettingsProps {
   onAddFounder: () => void;
   onUpdateFounder: (id: string, updates: Partial<Founder>) => void;
   onRemoveFounder: (id: string) => void;
+  disabled?: boolean;
 }
 
-export function FounderSettings({ founders, onAddFounder, onUpdateFounder, onRemoveFounder }: FounderSettingsProps) {
+export function FounderSettings({ founders, onAddFounder, onUpdateFounder, onRemoveFounder, disabled = false }: FounderSettingsProps) {
   const calculateHourlyGap = (founder: Founder) => {
     const hourlyMarket = founder.marketSalary / HOURS_PER_MONTH;
     const hourlyPaid = founder.paidSalary / HOURS_PER_MONTH;
@@ -24,7 +25,7 @@ export function FounderSettings({ founders, onAddFounder, onUpdateFounder, onRem
     <section className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">Founder Management</h3>
-        <Button onClick={onAddFounder} variant="outline" size="sm">
+        <Button onClick={onAddFounder} variant="outline" size="sm" disabled={disabled}>
           <Plus className="h-4 w-4 mr-2" />
           Add Founder
         </Button>
@@ -45,6 +46,7 @@ export function FounderSettings({ founders, onAddFounder, onUpdateFounder, onRem
                     value={founder.name}
                     onChange={(e) => onUpdateFounder(founder.id, { name: e.target.value })}
                     className="text-lg font-semibold border-0 p-0 h-auto bg-transparent focus-visible:ring-0"
+                    disabled={disabled}
                   />
                 </div>
                 {founders.length > 1 && (
@@ -53,6 +55,7 @@ export function FounderSettings({ founders, onAddFounder, onUpdateFounder, onRem
                     size="icon"
                     onClick={() => onRemoveFounder(founder.id)}
                     className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                    disabled={disabled}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -69,6 +72,7 @@ export function FounderSettings({ founders, onAddFounder, onUpdateFounder, onRem
                     value={founder.marketSalary}
                     onChange={(e) => onUpdateFounder(founder.id, { marketSalary: parseFloat(e.target.value) || 0 })}
                     className="input-financial"
+                    disabled={disabled}
                   />
                 </div>
 
@@ -81,6 +85,7 @@ export function FounderSettings({ founders, onAddFounder, onUpdateFounder, onRem
                     value={founder.paidSalary}
                     onChange={(e) => onUpdateFounder(founder.id, { paidSalary: parseFloat(e.target.value) || 0 })}
                     className="input-financial"
+                    disabled={disabled}
                   />
                 </div>
               </div>

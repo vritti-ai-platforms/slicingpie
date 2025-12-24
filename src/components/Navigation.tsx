@@ -1,9 +1,13 @@
 import { TabId } from '@/types/slicingPie';
-import { BarChart3, BookOpen, Settings, TrendingUp } from 'lucide-react';
+import { BarChart3, BookOpen, Settings, TrendingUp, LogOut, Shield, User } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 interface NavigationProps {
   activeTab: TabId;
   onTabChange: (tab: TabId) => void;
+  onSignOut?: () => void;
+  isAdmin?: boolean;
 }
 
 const tabs: { id: TabId; label: string; icon: React.ReactNode }[] = [
@@ -13,7 +17,7 @@ const tabs: { id: TabId; label: string; icon: React.ReactNode }[] = [
   { id: 'settings', label: 'Settings', icon: <Settings className="h-4 w-4" /> },
 ];
 
-export function Navigation({ activeTab, onTabChange }: NavigationProps) {
+export function Navigation({ activeTab, onTabChange, onSignOut, isAdmin }: NavigationProps) {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
       <div className="container mx-auto px-4">
@@ -46,6 +50,20 @@ export function Navigation({ activeTab, onTabChange }: NavigationProps) {
               </button>
             ))}
           </nav>
+
+          {/* User Actions */}
+          <div className="flex items-center gap-3">
+            <Badge variant={isAdmin ? "default" : "secondary"} className="gap-1">
+              {isAdmin ? <Shield className="h-3 w-3" /> : <User className="h-3 w-3" />}
+              {isAdmin ? 'Admin' : 'Member'}
+            </Badge>
+            {onSignOut && (
+              <Button variant="ghost" size="sm" onClick={onSignOut} className="gap-2">
+                <LogOut className="h-4 w-4" />
+                <span className="hidden sm:inline">Sign Out</span>
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </header>

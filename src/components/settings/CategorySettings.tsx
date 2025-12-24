@@ -6,9 +6,10 @@ import { CategoryBadge } from '@/components/CategoryBadge';
 interface CategorySettingsProps {
   categories: Category[];
   onUpdateCategory: (id: CategoryId, updates: Partial<Category>) => void;
+  disabled?: boolean;
 }
 
-export function CategorySettings({ categories, onUpdateCategory }: CategorySettingsProps) {
+export function CategorySettings({ categories, onUpdateCategory, disabled = false }: CategorySettingsProps) {
   return (
     <section className="space-y-4">
       <h3 className="text-lg font-semibold">Category Configuration</h3>
@@ -37,6 +38,7 @@ export function CategorySettings({ categories, onUpdateCategory }: CategorySetti
                     value={category.multiplier}
                     onChange={(e) => onUpdateCategory(category.id, { multiplier: parseFloat(e.target.value) || 0 })}
                     className="input-financial w-20"
+                    disabled={disabled}
                   />
                   <span className="text-muted-foreground">×</span>
                 </div>
@@ -55,6 +57,7 @@ export function CategorySettings({ categories, onUpdateCategory }: CategorySetti
                       value={category.commissionPercent}
                       onChange={(e) => onUpdateCategory(category.id, { commissionPercent: parseFloat(e.target.value) || 0 })}
                       className="input-financial w-20"
+                      disabled={disabled}
                     />
                     <span className="text-muted-foreground">%</span>
                   </div>

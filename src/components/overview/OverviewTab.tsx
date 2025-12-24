@@ -1,6 +1,7 @@
 import { Founder, Category, FounderCalculations } from '@/types/slicingPie';
 import { SummaryCards } from './SummaryCards';
 import { FounderCard } from './FounderCard';
+import { EquityPieChart } from './EquityPieChart';
 
 interface OverviewTabProps {
   founders: Founder[];
@@ -21,6 +22,15 @@ export function OverviewTab({ founders, categories, founderCalculations, totals 
       <section>
         <h2 className="text-lg font-semibold mb-4">Summary</h2>
         <SummaryCards {...totals} />
+      </section>
+
+      {/* Equity Pie Chart */}
+      <section>
+        <EquityPieChart 
+          founders={founders}
+          founderCalculations={founderCalculations}
+          totalSlices={totals.totalSlices}
+        />
       </section>
 
       {/* Founder Cards */}

@@ -1,77 +1,310 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { Founder, Category, LedgerEntry, FounderCalculations, CategoryId } from '@/types/slicingPie';
 import { DEFAULT_FOUNDERS, DEFAULT_CATEGORIES } from '@/lib/constants';
 import { calculateFounderSlices } from '@/lib/calculations';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './useAuth';
+import { useToast } from './use-toast';
 
 export function useSlicingPie() {
-  const [founders, setFounders] = useState<Founder[]>(DEFAULT_FOUNDERS);
-  const [categories, setCategories] = useState<Category[]>(DEFAULT_CATEGORIES);
+  const [founders, setFounders] = useState<Founder[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [entries, setEntries] = useState<LedgerEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  const { user, isAdmin } = useAuth();
+  const { toast } = useToast();
+
+  // Load data from database
+  useEffect(() => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+    
+    loadData();
+  }, [user]);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      // Load founders
+      const { data: foundersData, error: foundersError } = await supabase
+        .from('founders')
+        .select('*')
+        .order('created_at');
+
+      if (foundersError) throw foundersError;
+
+      // Load categories
+      const { data: categoriesData, error: categoriesError } = await supabase
+        .from('categories')
+        .select('*')
+        .order('created_at');
+
+      if (categoriesError) throw categoriesError;
+
+      // Load ledger entries
+      const { data: entriesData, error: entriesError } = await supabase
+        .from('ledger_entries')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (entriesError) throw entriesError;
+
+      // If no data exists, seed with defaults (admin only)
+      if (foundersData.length === 0 && isAdmin) {
+        await seedDefaultData();
+        return;
+      }
+
+      // Map database format to app format
+      setFounders(foundersData.map(f => ({
+        id: f.id,
+        name: f.name,
+        marketSalary: Number(f.market_salary),
+        paidSalary: Number(f.paid_salary),
+      })));
+
+      setCategories(categoriesData.map(c => ({
+        id: c.id as CategoryId,
+        name: c.name,
+        multiplier: Number(c.multiplier),
+        inputType: c.input_type as 'currency' | 'hours',
+        isAutoCalculated: c.is_auto_calculated,
+        commissionPercent: c.commission_percent ? Number(c.commission_percent) : undefined,
+        color: c.color || 'blue',
+        emoji: c.emoji || '💰',
+      })));
+
+      setEntries(entriesData.map(e => ({
+        id: e.id,
+        founderId: e.founder_id,
+        categoryId: e.category_id as CategoryId,
+        amount: Number(e.amount),
+        description: e.description || '',
+        createdAt: new Date(e.created_at),
+        founderSnapshot: e.founder_snapshot as { marketSalary: number; paidSalary: number },
+        categorySnapshot: e.category_snapshot as { multiplier: number; commissionPercent?: number },
+      })));
+
+    } catch (error: any) {
+      console.error('Error loading data:', error);
+      toast({
+        title: 'Error loading data',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const seedDefaultData = async () => {
+    try {
+      // Insert default categories
+      for (const cat of DEFAULT_CATEGORIES) {
+        await supabase.from('categories').insert({
+          id: cat.id,
+          name: cat.name,
+          multiplier: cat.multiplier,
+          input_type: cat.inputType,
+          is_auto_calculated: cat.isAutoCalculated,
+          commission_percent: cat.commissionPercent,
+          color: cat.color,
+          emoji: cat.emoji,
+        });
+      }
+
+      // Insert default founders
+      for (const founder of DEFAULT_FOUNDERS) {
+        await supabase.from('founders').insert({
+          name: founder.name,
+          market_salary: founder.marketSalary,
+          paid_salary: founder.paidSalary,
+        });
+      }
+
+      // Reload data
+      await loadData();
+    } catch (error: any) {
+      console.error('Error seeding data:', error);
+    }
+  };
 
   // Founder operations
-  const addFounder = useCallback(() => {
-    const newId = String(Date.now());
-    setFounders(prev => [
-      ...prev,
-      {
-        id: newId,
-        name: `Founder ${prev.length + 1}`,
-        marketSalary: 100000,
-        paidSalary: 0,
-      },
-    ]);
-  }, []);
+  const addFounder = useCallback(async () => {
+    if (!isAdmin) {
+      toast({ title: 'Permission denied', description: 'Only admins can add founders.', variant: 'destructive' });
+      return;
+    }
 
-  const updateFounder = useCallback((id: string, updates: Partial<Founder>) => {
+    const { data, error } = await supabase
+      .from('founders')
+      .insert({
+        name: `Founder ${founders.length + 1}`,
+        market_salary: 100000,
+        paid_salary: 0,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      toast({ title: 'Error adding founder', description: error.message, variant: 'destructive' });
+      return;
+    }
+
+    setFounders(prev => [...prev, {
+      id: data.id,
+      name: data.name,
+      marketSalary: Number(data.market_salary),
+      paidSalary: Number(data.paid_salary),
+    }]);
+  }, [founders.length, isAdmin, toast]);
+
+  const updateFounder = useCallback(async (id: string, updates: Partial<Founder>) => {
+    if (!isAdmin) {
+      toast({ title: 'Permission denied', description: 'Only admins can update founders.', variant: 'destructive' });
+      return;
+    }
+
+    const dbUpdates: any = {};
+    if (updates.name !== undefined) dbUpdates.name = updates.name;
+    if (updates.marketSalary !== undefined) dbUpdates.market_salary = updates.marketSalary;
+    if (updates.paidSalary !== undefined) dbUpdates.paid_salary = updates.paidSalary;
+
+    const { error } = await supabase
+      .from('founders')
+      .update(dbUpdates)
+      .eq('id', id);
+
+    if (error) {
+      toast({ title: 'Error updating founder', description: error.message, variant: 'destructive' });
+      return;
+    }
+
     setFounders(prev =>
       prev.map(f => (f.id === id ? { ...f, ...updates } : f))
     );
-  }, []);
+  }, [isAdmin, toast]);
 
-  const removeFounder = useCallback((id: string) => {
-    setFounders(prev => {
-      if (prev.length <= 1) return prev;
-      return prev.filter(f => f.id !== id);
-    });
+  const removeFounder = useCallback(async (id: string) => {
+    if (!isAdmin) {
+      toast({ title: 'Permission denied', description: 'Only admins can remove founders.', variant: 'destructive' });
+      return;
+    }
+
+    if (founders.length <= 1) {
+      toast({ title: 'Cannot remove', description: 'At least one founder must remain.', variant: 'destructive' });
+      return;
+    }
+
+    const { error } = await supabase
+      .from('founders')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      toast({ title: 'Error removing founder', description: error.message, variant: 'destructive' });
+      return;
+    }
+
+    setFounders(prev => prev.filter(f => f.id !== id));
     setEntries(prev => prev.filter(e => e.founderId !== id));
-  }, []);
+  }, [founders.length, isAdmin, toast]);
 
   // Category operations
-  const updateCategory = useCallback((id: CategoryId, updates: Partial<Category>) => {
+  const updateCategory = useCallback(async (id: CategoryId, updates: Partial<Category>) => {
+    if (!isAdmin) {
+      toast({ title: 'Permission denied', description: 'Only admins can update categories.', variant: 'destructive' });
+      return;
+    }
+
+    const dbUpdates: any = {};
+    if (updates.name !== undefined) dbUpdates.name = updates.name;
+    if (updates.multiplier !== undefined) dbUpdates.multiplier = updates.multiplier;
+    if (updates.commissionPercent !== undefined) dbUpdates.commission_percent = updates.commissionPercent;
+
+    const { error } = await supabase
+      .from('categories')
+      .update(dbUpdates)
+      .eq('id', id);
+
+    if (error) {
+      toast({ title: 'Error updating category', description: error.message, variant: 'destructive' });
+      return;
+    }
+
     setCategories(prev =>
       prev.map(c => (c.id === id ? { ...c, ...updates } : c))
     );
-  }, []);
+  }, [isAdmin, toast]);
 
-  // Entry operations - capture founder and category config at time of entry
-  const addEntry = useCallback((founderId: string, categoryId: CategoryId, amount: number, description: string) => {
+  // Entry operations
+  const addEntry = useCallback(async (founderId: string, categoryId: CategoryId, amount: number, description: string) => {
     const founder = founders.find(f => f.id === founderId);
     const category = categories.find(c => c.id === categoryId);
     
-    if (!founder || !category) return;
-    
+    if (!founder || !category || !user) return;
+
+    const founderSnapshot = {
+      marketSalary: founder.marketSalary,
+      paidSalary: founder.paidSalary,
+    };
+
+    const categorySnapshot = {
+      multiplier: category.multiplier,
+      commissionPercent: category.commissionPercent,
+    };
+
+    const { data, error } = await supabase
+      .from('ledger_entries')
+      .insert({
+        founder_id: founderId,
+        category_id: categoryId,
+        amount,
+        description,
+        founder_snapshot: founderSnapshot,
+        category_snapshot: categorySnapshot,
+        created_by: user.id,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      toast({ title: 'Error adding entry', description: error.message, variant: 'destructive' });
+      return;
+    }
+
     const newEntry: LedgerEntry = {
-      id: String(Date.now()),
+      id: data.id,
       founderId,
       categoryId,
       amount,
       description,
-      createdAt: new Date(),
-      founderSnapshot: {
-        marketSalary: founder.marketSalary,
-        paidSalary: founder.paidSalary,
-      },
-      categorySnapshot: {
-        multiplier: category.multiplier,
-        commissionPercent: category.commissionPercent,
-      },
+      createdAt: new Date(data.created_at),
+      founderSnapshot,
+      categorySnapshot,
     };
+    
     setEntries(prev => [newEntry, ...prev]);
-  }, [founders, categories]);
+    toast({ title: 'Entry added', description: 'Ledger entry has been recorded.' });
+  }, [founders, categories, user, toast]);
 
-  const removeEntry = useCallback((id: string) => {
+  const removeEntry = useCallback(async (id: string) => {
+    const { error } = await supabase
+      .from('ledger_entries')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      toast({ title: 'Error removing entry', description: error.message, variant: 'destructive' });
+      return;
+    }
+
     setEntries(prev => prev.filter(e => e.id !== id));
-  }, []);
+    toast({ title: 'Entry removed', description: 'Ledger entry has been deleted.' });
+  }, [toast]);
 
   // Calculations
   const founderCalculations = useMemo((): FounderCalculations[] => {
@@ -101,11 +334,14 @@ export function useSlicingPie() {
     founderCalculations,
     totals,
     inputCategories,
+    loading,
+    isAdmin,
     addFounder,
     updateFounder,
     removeFounder,
     updateCategory,
     addEntry,
     removeEntry,
+    refetch: loadData,
   };
 }
