@@ -70,8 +70,16 @@ export function ForecastTab({ founders, categories, forecastValues, onForecastVa
       const expenseReceivedCategory = categories.find(c => c.id === 'expense_received');
       const expenseReceivedSlices = expenseReceivedAmount * (expenseReceivedCategory?.multiplier || 4);
 
-      const totalSlices = cashSlices + timeSlices + revenueSlices + expensesSlices - expenseReceivedSlices;
-      
+      // Base total without IP (IP is percentage-based, calculated after)
+      const baseSlices = cashSlices + timeSlices + revenueSlices + expensesSlices - expenseReceivedSlices;
+
+      // IP is percentage-based - percentage of final total
+      const ipPercent = values['intellectual_property'] || 0;
+      // If IP is X%, final total = baseSlices / (1 - X/100)
+      const ipFraction = ipPercent / 100;
+      const totalSlices = ipFraction < 1 ? baseSlices / (1 - ipFraction) : baseSlices;
+      const intellectualPropertySlices = totalSlices - baseSlices;
+
       return {
         founder,
         values,
@@ -82,6 +90,7 @@ export function ForecastTab({ founders, categories, forecastValues, onForecastVa
           revenue: revenueSlices,
           expenses: expensesSlices,
           expense_received: expenseReceivedSlices,
+          intellectual_property: intellectualPropertySlices,
           total: totalSlices,
         },
       };
@@ -97,6 +106,7 @@ export function ForecastTab({ founders, categories, forecastValues, onForecastVa
       revenue: 'bg-purple-500',
       expenses: 'bg-rose-500',
       expense_received: 'bg-violet-500',
+      intellectual_property: 'bg-green-500',
     };
     return colors[categoryId] || 'bg-gray-500';
   };
@@ -198,15 +208,20 @@ export function ForecastTab({ founders, categories, forecastValues, onForecastVa
                         <Input
                           type="number"
                           min={0}
+                          max={category.isPercentageBased ? 100 : undefined}
                           value={value || ''}
                           onChange={(e) => updateValue(founder.id, category.id, parseFloat(e.target.value) || 0)}
-                          placeholder={category.inputType === 'currency' ? '₹0' : '0 hrs'}
+                          placeholder={category.isPercentageBased ? '0%' : category.inputType === 'currency' ? '₹0' : '0 hrs'}
                           className="font-mono"
                         />
                         <span className="text-sm text-muted-foreground whitespace-nowrap">
-                          × {category.multiplier}
-                          {category.id === 'revenue' && ` × ${category.commissionPercent}%`}
-                          {category.id === 'time' && ` × ₹${formatNumber(calc?.hourlyGap || 0, 2)}`}
+                          {category.isPercentageBased
+                            ? '% of total'
+                            : <>× {category.multiplier}
+                              {category.id === 'revenue' && ` × ${category.commissionPercent}%`}
+                              {category.id === 'time' && ` × ₹${formatNumber(calc?.hourlyGap || 0, 2)}`}
+                            </>
+                          }
                         </span>
                       </div>
                       {/* Mini progress bar */}

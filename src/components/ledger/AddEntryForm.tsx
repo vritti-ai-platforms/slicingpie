@@ -14,11 +14,15 @@ interface AddEntryFormProps {
   founders: Founder[];
   categories: Category[];
   onAddEntry: (founderId: string, categoryId: CategoryId, amount: number, description: string, date: Date) => void;
+  isAdmin: boolean;
 }
 
-export function AddEntryForm({ founders, categories, onAddEntry }: AddEntryFormProps) {
+export function AddEntryForm({ founders, categories, onAddEntry, isAdmin }: AddEntryFormProps) {
   const [founderId, setFounderId] = useState('');
   const [categoryId, setCategoryId] = useState<CategoryId | ''>('');
+
+  // Filter categories based on admin status - admin-only categories hidden for non-admins
+  const availableCategories = categories.filter(c => !c.adminOnly || isAdmin);
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState<Date>(new Date());
@@ -39,11 +43,13 @@ export function AddEntryForm({ founders, categories, onAddEntry }: AddEntryFormP
 
   const getAmountLabel = () => {
     if (!selectedCategory) return 'Amount';
+    if (selectedCategory.isPercentageBased) return 'Percentage (%)';
     return selectedCategory.inputType === 'hours' ? 'Hours' : 'Amount (₹)';
   };
 
   const getAmountPlaceholder = () => {
     if (!selectedCategory) return 'Enter amount';
+    if (selectedCategory.isPercentageBased) return 'e.g., 5';
     return selectedCategory.inputType === 'hours' ? 'e.g., 160' : 'e.g., 50000';
   };
 
@@ -75,7 +81,7 @@ export function AddEntryForm({ founders, categories, onAddEntry }: AddEntryFormP
               <SelectValue placeholder="Select category" />
             </SelectTrigger>
             <SelectContent className="bg-card border border-border">
-              {categories.map(c => (
+              {availableCategories.map(c => (
                 <SelectItem key={c.id} value={c.id}>
                   {c.emoji} {c.name}
                 </SelectItem>

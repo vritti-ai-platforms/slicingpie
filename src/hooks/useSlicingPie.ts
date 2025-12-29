@@ -66,16 +66,22 @@ export function useSlicingPie() {
         paidSalary: Number(f.paid_salary),
       })));
 
-      setCategories(categoriesData.map(c => ({
-        id: c.id as CategoryId,
-        name: c.name,
-        multiplier: Number(c.multiplier),
-        inputType: c.input_type as 'currency' | 'hours',
-        isAutoCalculated: c.is_auto_calculated,
-        commissionPercent: c.commission_percent ? Number(c.commission_percent) : undefined,
-        color: c.color || 'blue',
-        emoji: c.emoji || '💰',
-      })));
+      // Merge database categories with DEFAULT_CATEGORIES to get client-side only fields
+      setCategories(categoriesData.map(c => {
+        const defaultCat = DEFAULT_CATEGORIES.find(dc => dc.id === c.id);
+        return {
+          id: c.id as CategoryId,
+          name: c.name,
+          multiplier: Number(c.multiplier),
+          inputType: c.input_type as 'currency' | 'hours',
+          isAutoCalculated: c.is_auto_calculated,
+          commissionPercent: c.commission_percent ? Number(c.commission_percent) : undefined,
+          isPercentageBased: defaultCat?.isPercentageBased,
+          adminOnly: defaultCat?.adminOnly,
+          color: c.color || 'blue',
+          emoji: c.emoji || '💰',
+        };
+      }));
 
       setEntries(entriesData.map(e => ({
         id: e.id,
@@ -87,7 +93,7 @@ export function useSlicingPie() {
         createdAt: new Date(e.created_at),
         createdBy: e.created_by,
         founderSnapshot: e.founder_snapshot as { marketSalary: number; paidSalary: number },
-        categorySnapshot: e.category_snapshot as { multiplier: number; commissionPercent?: number },
+        categorySnapshot: e.category_snapshot as { multiplier: number; commissionPercent?: number; calculatedSlices?: number },
       })));
 
     } catch (error: any) {
@@ -254,9 +260,21 @@ export function useSlicingPie() {
       paidSalary: founder.paidSalary,
     };
 
-    const categorySnapshot = {
+    // For IP category, calculate slices based on current total
+    let calculatedSlices: number | undefined;
+    if (category.isPercentageBased) {
+      // Calculate current total slices directly to avoid circular dependency
+      const currentTotalSlices = founders.reduce((total, f) => {
+        const calc = calculateFounderSlices(f, entries, categories);
+        return total + calc.slices.total;
+      }, 0);
+      calculatedSlices = currentTotalSlices * (amount / 100);
+    }
+
+    const categorySnapshot: { multiplier: number; commissionPercent?: number; calculatedSlices?: number } = {
       multiplier: category.multiplier,
       commissionPercent: category.commissionPercent,
+      calculatedSlices,
     };
 
     const { data, error } = await supabase
@@ -294,7 +312,7 @@ export function useSlicingPie() {
 
     setEntries(prev => [newEntry, ...prev]);
     toast({ title: 'Entry added', description: 'Ledger entry has been recorded.' });
-  }, [founders, categories, user, toast]);
+  }, [founders, categories, entries, user, toast]);
 
   const removeEntry = useCallback(async (id: string) => {
     const { error } = await supabase

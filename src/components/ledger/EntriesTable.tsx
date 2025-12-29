@@ -98,7 +98,10 @@ export function EntriesTable({ entries, founders, categories, onRemoveEntry, cur
             ) : (
               filteredEntries.map(entry => {
                 const category = getCategory(entry.categoryId);
-                const canDelete = isAdmin || entry.createdBy === currentUserId;
+                // Admin-only categories can only be deleted by admin
+                const canDelete = category?.adminOnly
+                  ? isAdmin
+                  : (isAdmin || entry.createdBy === currentUserId);
                 return (
                   <tr key={entry.id} className="hover:bg-muted/30 transition-colors">
                     <td className="px-4 py-3 text-sm">

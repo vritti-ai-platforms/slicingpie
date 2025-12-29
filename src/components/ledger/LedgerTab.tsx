@@ -22,6 +22,7 @@ export function LedgerTab({ founders, categories, entries, onAddEntry, onRemoveE
         founders={founders}
         categories={inputCategories}
         onAddEntry={onAddEntry}
+        isAdmin={isAdmin}
       />
 
       <section>

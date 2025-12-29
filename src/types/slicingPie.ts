@@ -5,7 +5,7 @@ export interface Founder {
   paidSalary: number; // Monthly in ₹
 }
 
-export type CategoryId = 'cash' | 'time' | 'revenue' | 'expenses' | 'expense_received';
+export type CategoryId = 'cash' | 'time' | 'revenue' | 'expenses' | 'expense_received' | 'intellectual_property';
 
 export interface Category {
   id: CategoryId;
@@ -14,6 +14,8 @@ export interface Category {
   inputType: 'currency' | 'hours';
   isAutoCalculated: boolean;
   commissionPercent?: number; // Only for revenue
+  isPercentageBased?: boolean; // true for IP category
+  adminOnly?: boolean; // true for IP and expense_received
   color: string;
   emoji: string;
 }
@@ -26,6 +28,7 @@ export interface FounderSnapshot {
 export interface CategorySnapshot {
   multiplier: number;
   commissionPercent?: number;
+  calculatedSlices?: number; // For IP: stores the calculated slices at entry time
 }
 
 export interface LedgerEntry {
@@ -55,12 +58,14 @@ export interface FounderCalculations {
   revenueTotal: number;
   expensesTotal: number;
   expenseReceivedTotal: number;
+  intellectualPropertyTotal: number;
   slices: {
     cash: number;
     time: number;
     revenue: number;
     expenses: number;
     expenseReceived: number;
+    intellectualProperty: number;
     total: number;
   };
 }

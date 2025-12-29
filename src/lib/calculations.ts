@@ -70,16 +70,25 @@ export function calculateFounderSlices(
     return sum + e.amount * multiplier;
   }, 0);
 
+  // Intellectual Property slices - uses calculatedSlices from snapshot (percentage-based)
+  const ipEntries = founderEntries.filter(e => e.categoryId === 'intellectual_property');
+  const intellectualPropertyTotal = ipEntries.reduce((sum, e) => sum + e.amount, 0);
+  const intellectualPropertySlices = ipEntries.reduce((sum, e) => {
+    // IP entries store the calculated slices at entry time in the snapshot
+    return sum + (e.categorySnapshot.calculatedSlices ?? 0);
+  }, 0);
+
   const slices = {
     cash: cashSlices,
     time: timeSlices,
     revenue: revenueSlices,
     expenses: expensesSlices,
     expenseReceived: expenseReceivedSlices,
+    intellectualProperty: intellectualPropertySlices,
     total: 0,
   };
-  // SUBTRACT expenseReceived from total (reimbursements reduce pie ownership)
-  slices.total = slices.cash + slices.time + slices.revenue + slices.expenses - slices.expenseReceived;
+  // SUBTRACT expenseReceived and ADD intellectualProperty
+  slices.total = slices.cash + slices.time + slices.revenue + slices.expenses - slices.expenseReceived + slices.intellectualProperty;
   
   return {
     founderId: founder.id,
@@ -94,6 +103,7 @@ export function calculateFounderSlices(
     revenueTotal,
     expensesTotal,
     expenseReceivedTotal,
+    intellectualPropertyTotal,
     slices,
   };
 }

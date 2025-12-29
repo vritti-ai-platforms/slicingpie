@@ -48,6 +48,13 @@ export function FounderCard({ founder, calculations, categories, totalSlices }: 
       formula: `${formatCurrency(calculations.expenseReceivedTotal)} × ${categories.find(c => c.id === 'expense_received')?.multiplier}`,
       slices: -calculations.slices.expenseReceived,  // Show as negative
     },
+    {
+      category: categories.find(c => c.id === 'intellectual_property')!,
+      input: `${formatNumber(calculations.intellectualPropertyTotal)}%`,
+      multiplier: '% of total',
+      formula: `${formatNumber(calculations.intellectualPropertyTotal)}% of total pie`,
+      slices: calculations.slices.intellectualProperty,
+    },
   ];
 
   const colorClasses: Record<string, string> = {
@@ -56,6 +63,7 @@ export function FounderCard({ founder, calculations, categories, totalSlices }: 
     red: 'bg-red-500',
     pink: 'bg-pink-500',
     purple: 'bg-purple-500',
+    green: 'bg-green-500',
   };
 
   return (
