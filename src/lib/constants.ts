@@ -32,7 +32,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
   {
     id: 'revenue',
     name: 'Revenue Brought In',
-    multiplier: 8,
+    multiplier: 4,
     inputType: 'currency',
     isAutoCalculated: false,
     commissionPercent: 10,
