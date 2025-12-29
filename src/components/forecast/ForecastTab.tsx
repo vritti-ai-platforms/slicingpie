@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Founder, Category, CategoryId } from '@/types/slicingPie';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -10,34 +10,33 @@ import { TrendingUp, PieChart } from 'lucide-react';
 interface ForecastTabProps {
   founders: Founder[];
   categories: Category[];
+  forecastValues: Record<string, Record<string, number>>;
+  onForecastValuesChange: (values: Record<string, Record<string, number>>) => void;
 }
 
-interface ForecastValues {
-  [founderId: string]: {
-    [categoryId: string]: number;
-  };
-}
-
-export function ForecastTab({ founders, categories }: ForecastTabProps) {
-  const [forecastValues, setForecastValues] = useState<ForecastValues>(() => {
-    const initial: ForecastValues = {};
-    founders.forEach(f => {
-      initial[f.id] = {};
-      categories.filter(c => !c.isAutoCalculated).forEach(c => {
-        initial[f.id][c.id] = 0;
+export function ForecastTab({ founders, categories, forecastValues, onForecastValuesChange }: ForecastTabProps) {
+  // Initialize forecast values if empty
+  useEffect(() => {
+    if (Object.keys(forecastValues).length === 0 && founders.length > 0) {
+      const initial: Record<string, Record<string, number>> = {};
+      founders.forEach(f => {
+        initial[f.id] = {};
+        categories.filter(c => !c.isAutoCalculated).forEach(c => {
+          initial[f.id][c.id] = 0;
+        });
       });
-    });
-    return initial;
-  });
+      onForecastValuesChange(initial);
+    }
+  }, [founders, categories, forecastValues, onForecastValuesChange]);
 
   const updateValue = (founderId: string, categoryId: string, value: number) => {
-    setForecastValues(prev => ({
-      ...prev,
+    onForecastValuesChange({
+      ...forecastValues,
       [founderId]: {
-        ...prev[founderId],
+        ...forecastValues[founderId],
         [categoryId]: value,
       },
-    }));
+    });
   };
 
   const inputCategories = categories.filter(c => !c.isAutoCalculated);
@@ -66,8 +65,12 @@ export function ForecastTab({ founders, categories }: ForecastTabProps) {
       const expensesAmount = values['expenses'] || 0;
       const expensesCategory = categories.find(c => c.id === 'expenses');
       const expensesSlices = expensesAmount * (expensesCategory?.multiplier || 2);
-      
-      const totalSlices = cashSlices + timeSlices + revenueSlices + expensesSlices;
+
+      const expenseReceivedAmount = values['expense_received'] || 0;
+      const expenseReceivedCategory = categories.find(c => c.id === 'expense_received');
+      const expenseReceivedSlices = expenseReceivedAmount * (expenseReceivedCategory?.multiplier || 4);
+
+      const totalSlices = cashSlices + timeSlices + revenueSlices + expensesSlices - expenseReceivedSlices;
       
       return {
         founder,
@@ -78,6 +81,7 @@ export function ForecastTab({ founders, categories }: ForecastTabProps) {
           time: timeSlices,
           revenue: revenueSlices,
           expenses: expensesSlices,
+          expense_received: expenseReceivedSlices,
           total: totalSlices,
         },
       };
@@ -92,6 +96,7 @@ export function ForecastTab({ founders, categories }: ForecastTabProps) {
       time: 'bg-amber-500',
       revenue: 'bg-purple-500',
       expenses: 'bg-rose-500',
+      expense_received: 'bg-violet-500',
     };
     return colors[categoryId] || 'bg-gray-500';
   };

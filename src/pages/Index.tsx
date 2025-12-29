@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState<TabId>('overview');
+  const [forecastValues, setForecastValues] = useState<Record<string, Record<string, number>>>({});
   const navigate = useNavigate();
   const { user, loading: authLoading, signOut, isAdmin } = useAuth();
   
@@ -104,6 +105,8 @@ const Index = () => {
           <ForecastTab
             founders={founders}
             categories={categories}
+            forecastValues={forecastValues}
+            onForecastValuesChange={setForecastValues}
           />
         )}
         
