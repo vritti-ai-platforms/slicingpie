@@ -18,22 +18,46 @@ interface DebouncedInputProps {
 function DebouncedInput({ value, onChange, type = 'text', debounceMs = 500, ...props }: DebouncedInputProps) {
   const [localValue, setLocalValue] = useState(String(value));
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSentValueRef = useRef<string>(String(value));
+  const isEditingRef = useRef(false);
 
+  // Only sync from external value if it's a genuine external change
   useEffect(() => {
-    setLocalValue(String(value));
+    const externalValue = String(value);
+    // Don't sync if we're editing or if this is an echo of our own change
+    if (!isEditingRef.current && externalValue !== lastSentValueRef.current) {
+      setLocalValue(externalValue);
+      lastSentValueRef.current = externalValue;
+    }
   }, [value]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     setLocalValue(newValue);
+    isEditingRef.current = true;
 
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
 
     timeoutRef.current = setTimeout(() => {
+      lastSentValueRef.current = newValue;
+      isEditingRef.current = false;
       onChange(newValue);
     }, debounceMs);
+  };
+
+  const handleBlur = () => {
+    // Flush any pending changes on blur
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    if (localValue !== lastSentValueRef.current) {
+      lastSentValueRef.current = localValue;
+      onChange(localValue);
+    }
+    isEditingRef.current = false;
   };
 
   useEffect(() => {
@@ -44,7 +68,7 @@ function DebouncedInput({ value, onChange, type = 'text', debounceMs = 500, ...p
     };
   }, []);
 
-  return <Input type={type} value={localValue} onChange={handleChange} {...props} />;
+  return <Input type={type} value={localValue} onChange={handleChange} onBlur={handleBlur} {...props} />;
 }
 
 interface FounderSettingsProps {
