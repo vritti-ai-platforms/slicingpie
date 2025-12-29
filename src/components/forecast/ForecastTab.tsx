@@ -191,7 +191,7 @@ export function ForecastTab({ founders, categories, forecastValues, onForecastVa
                           <span>{category.name}</span>
                         </Label>
                         <span className="text-sm text-muted-foreground">
-                          {formatNumber(slices)} slices
+                          {category.id === 'expense_received' ? `-${formatNumber(slices)}` : formatNumber(slices)} slices
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
@@ -248,7 +248,7 @@ export function ForecastTab({ founders, categories, forecastValues, onForecastVa
                         <span>{category.name}</span>
                       </span>
                       <span className="font-medium">
-                        {formatNumber(categoryTotal)} slices ({formatNumber(categoryPercent, 1)}%)
+                        {category.id === 'expense_received' ? `-${formatNumber(categoryTotal)}` : formatNumber(categoryTotal)} slices ({formatNumber(categoryPercent, 1)}%)
                       </span>
                     </div>
                     <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
