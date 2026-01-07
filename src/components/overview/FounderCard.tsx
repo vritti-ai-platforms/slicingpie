@@ -1,6 +1,7 @@
-import { Founder, Category, FounderCalculations } from '@/types/slicingPie';
+import { Founder, Category, FounderCalculations, CategoryId } from '@/types/slicingPie';
 import { formatCurrency, formatSlices, formatNumber } from '@/lib/calculations';
 import { HOURS_PER_MONTH } from '@/lib/constants';
+import { MultiplierCell } from './MultiplierCell';
 
 interface FounderCardProps {
   founder: Founder;
@@ -15,44 +16,38 @@ export function FounderCard({ founder, calculations, categories, totalSlices }: 
   const categoryBreakdown = [
     {
       category: categories.find(c => c.id === 'cash')!,
+      categoryId: 'cash' as CategoryId,
       input: formatCurrency(calculations.cashInvested),
-      multiplier: `${categories.find(c => c.id === 'cash')?.multiplier}×`,
-      formula: `${formatCurrency(calculations.cashInvested)} × ${categories.find(c => c.id === 'cash')?.multiplier}`,
       slices: calculations.slices.cash,
     },
     {
       category: categories.find(c => c.id === 'time')!,
+      categoryId: 'time' as CategoryId,
       input: `${formatNumber(calculations.hoursWorked)} hrs`,
-      multiplier: `${categories.find(c => c.id === 'time')?.multiplier}×`,
-      formula: `₹${formatNumber(calculations.hourlyGap, 2)}/hr × ${formatNumber(calculations.hoursWorked)} hrs × ${categories.find(c => c.id === 'time')?.multiplier}`,
       slices: calculations.slices.time,
     },
     {
       category: categories.find(c => c.id === 'revenue')!,
+      categoryId: 'revenue' as CategoryId,
       input: formatCurrency(calculations.revenueTotal),
-      multiplier: `${categories.find(c => c.id === 'revenue')?.commissionPercent}% × ${categories.find(c => c.id === 'revenue')?.multiplier}×`,
-      formula: `${formatCurrency(calculations.revenueTotal)} × ${categories.find(c => c.id === 'revenue')?.commissionPercent}% × ${categories.find(c => c.id === 'revenue')?.multiplier}`,
       slices: calculations.slices.revenue,
     },
     {
       category: categories.find(c => c.id === 'expenses')!,
+      categoryId: 'expenses' as CategoryId,
       input: formatCurrency(calculations.expensesTotal),
-      multiplier: `${categories.find(c => c.id === 'expenses')?.multiplier}×`,
-      formula: `${formatCurrency(calculations.expensesTotal)} × ${categories.find(c => c.id === 'expenses')?.multiplier}`,
       slices: calculations.slices.expenses,
     },
     {
       category: categories.find(c => c.id === 'expense_received')!,
+      categoryId: 'expense_received' as CategoryId,
       input: formatCurrency(calculations.expenseReceivedTotal),
-      multiplier: `${categories.find(c => c.id === 'expense_received')?.multiplier}×`,
-      formula: `${formatCurrency(calculations.expenseReceivedTotal)} × ${categories.find(c => c.id === 'expense_received')?.multiplier}`,
       slices: -calculations.slices.expenseReceived,  // Show as negative
     },
     {
       category: categories.find(c => c.id === 'intellectual_property')!,
+      categoryId: 'intellectual_property' as CategoryId,
       input: `${formatNumber(calculations.intellectualPropertyTotal)}%`,
-      multiplier: '% of total',
-      formula: `${formatNumber(calculations.intellectualPropertyTotal)}% of total pie`,
       slices: calculations.slices.intellectualProperty,
     },
   ];
@@ -151,7 +146,12 @@ export function FounderCard({ founder, calculations, categories, totalSlices }: 
                     </div>
                   </td>
                   <td className="py-3 text-right font-mono text-muted-foreground">{row.input}</td>
-                  <td className="py-3 text-center text-muted-foreground">{row.multiplier}</td>
+                  <td className="py-3 text-center">
+                    <MultiplierCell
+                      breakdown={calculations.categoryBreakdowns[row.categoryId]}
+                      category={row.category}
+                    />
+                  </td>
                   <td className="py-3 text-right font-mono font-semibold">{formatSlices(row.slices)}</td>
                 </tr>
               ))}

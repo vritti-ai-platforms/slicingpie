@@ -7,6 +7,21 @@ export interface Founder {
 
 export type CategoryId = 'cash' | 'time' | 'revenue' | 'expenses' | 'expense_received' | 'intellectual_property';
 
+export interface CategoryBreakdownEntry {
+  multiplier: number;
+  totalAmount: number;
+  totalSlices: number;
+  entryCount: number;
+}
+
+export interface CategoryBreakdown {
+  categoryId: CategoryId;
+  entries: CategoryBreakdownEntry[];  // Grouped by multiplier
+  averageMultiplier: number;          // Weighted average
+  totalAmount: number;
+  totalSlices: number;
+}
+
 export interface Category {
   id: CategoryId;
   name: string;
@@ -68,6 +83,7 @@ export interface FounderCalculations {
     intellectualProperty: number;
     total: number;
   };
+  categoryBreakdowns: Record<CategoryId, CategoryBreakdown>;
 }
 
 export type TabId = 'overview' | 'ledger' | 'forecast' | 'settings';

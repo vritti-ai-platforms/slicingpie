@@ -1,5 +1,56 @@
-import { Founder, Category, LedgerEntry, FounderCalculations } from '@/types/slicingPie';
+import { Founder, Category, LedgerEntry, FounderCalculations, CategoryId, CategoryBreakdown, CategoryBreakdownEntry } from '@/types/slicingPie';
 import { HOURS_PER_MONTH, TOTAL_PERIOD_MONTHS } from './constants';
+
+function calculateCategoryBreakdown(
+  entries: LedgerEntry[],
+  categoryId: CategoryId,
+  slicesCalculator: (entry: LedgerEntry) => number,
+  amountExtractor: (entry: LedgerEntry) => number = (e) => e.amount
+): CategoryBreakdown {
+  const categoryEntries = entries.filter(e => e.categoryId === categoryId);
+
+  // Group entries by multiplier
+  const groupedByMultiplier = new Map<number, { totalAmount: number; totalSlices: number; count: number }>();
+
+  for (const entry of categoryEntries) {
+    const multiplier = entry.categorySnapshot.multiplier;
+    const amount = amountExtractor(entry);
+    const slices = slicesCalculator(entry);
+
+    const existing = groupedByMultiplier.get(multiplier) || { totalAmount: 0, totalSlices: 0, count: 0 };
+    groupedByMultiplier.set(multiplier, {
+      totalAmount: existing.totalAmount + amount,
+      totalSlices: existing.totalSlices + slices,
+      count: existing.count + 1,
+    });
+  }
+
+  // Convert to array and sort by multiplier descending
+  const breakdownEntries: CategoryBreakdownEntry[] = Array.from(groupedByMultiplier.entries())
+    .map(([multiplier, data]) => ({
+      multiplier,
+      totalAmount: data.totalAmount,
+      totalSlices: data.totalSlices,
+      entryCount: data.count,
+    }))
+    .sort((a, b) => b.multiplier - a.multiplier);
+
+  // Calculate totals
+  const totalAmount = breakdownEntries.reduce((sum, e) => sum + e.totalAmount, 0);
+  const totalSlices = breakdownEntries.reduce((sum, e) => sum + e.totalSlices, 0);
+
+  // Calculate weighted average multiplier: totalSlices / totalAmount
+  // For entries where slices = amount * multiplier, this gives the weighted average
+  const averageMultiplier = totalAmount > 0 ? totalSlices / totalAmount : 0;
+
+  return {
+    categoryId,
+    entries: breakdownEntries,
+    averageMultiplier,
+    totalAmount,
+    totalSlices,
+  };
+}
 
 export function calculateFounderSlices(
   founder: Founder,
@@ -89,7 +140,59 @@ export function calculateFounderSlices(
   };
   // SUBTRACT expenseReceived and ADD intellectualProperty
   slices.total = slices.cash + slices.time + slices.revenue + slices.expenses - slices.expenseReceived + slices.intellectualProperty;
-  
+
+  // Calculate category breakdowns for average multiplier display
+  const categoryBreakdowns: Record<CategoryId, CategoryBreakdown> = {
+    cash: calculateCategoryBreakdown(
+      founderEntries,
+      'cash',
+      (e) => e.amount * e.categorySnapshot.multiplier
+    ),
+    time: calculateCategoryBreakdown(
+      founderEntries,
+      'time',
+      (e) => {
+        const snapshot = e.founderSnapshot;
+        const snapshotHourlyGap = (snapshot.marketSalary - snapshot.paidSalary) / HOURS_PER_MONTH;
+        return snapshotHourlyGap * e.amount * e.categorySnapshot.multiplier;
+      },
+      (e) => {
+        // For time, the "amount" for display should be the salary gap value, not hours
+        const snapshot = e.founderSnapshot;
+        const snapshotHourlyGap = (snapshot.marketSalary - snapshot.paidSalary) / HOURS_PER_MONTH;
+        return snapshotHourlyGap * e.amount;
+      }
+    ),
+    revenue: calculateCategoryBreakdown(
+      founderEntries,
+      'revenue',
+      (e) => {
+        const commission = (e.categorySnapshot.commissionPercent ?? 10) / 100;
+        return e.amount * commission * e.categorySnapshot.multiplier;
+      },
+      (e) => {
+        // For revenue, the effective amount is after commission
+        const commission = (e.categorySnapshot.commissionPercent ?? 10) / 100;
+        return e.amount * commission;
+      }
+    ),
+    expenses: calculateCategoryBreakdown(
+      founderEntries,
+      'expenses',
+      (e) => e.amount * e.categorySnapshot.multiplier
+    ),
+    expense_received: calculateCategoryBreakdown(
+      founderEntries,
+      'expense_received',
+      (e) => e.amount * e.categorySnapshot.multiplier
+    ),
+    intellectual_property: calculateCategoryBreakdown(
+      founderEntries,
+      'intellectual_property',
+      (e) => e.categorySnapshot.calculatedSlices ?? 0
+    ),
+  };
+
   return {
     founderId: founder.id,
     hoursWorked,
@@ -105,6 +208,7 @@ export function calculateFounderSlices(
     expenseReceivedTotal,
     intellectualPropertyTotal,
     slices,
+    categoryBreakdowns,
   };
 }
 

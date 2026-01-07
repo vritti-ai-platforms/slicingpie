@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Founder, Category, LedgerEntry, CategoryId } from '@/types/slicingPie';
-import { formatCurrency, formatNumber } from '@/lib/calculations';
+import { formatCurrency, formatNumber, formatSlices } from '@/lib/calculations';
+import { HOURS_PER_MONTH } from '@/lib/constants';
 import { CategoryBadge } from '@/components/CategoryBadge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -34,9 +35,32 @@ export function EntriesTable({ entries, founders, categories, onRemoveEntry, cur
   const formatAmount = (entry: LedgerEntry) => {
     const category = getCategory(entry.categoryId);
     if (!category) return String(entry.amount);
-    return category.inputType === 'hours' 
+    return category.inputType === 'hours'
       ? `${formatNumber(entry.amount)} hrs`
       : formatCurrency(entry.amount);
+  };
+
+  const calculateEntrySlices = (entry: LedgerEntry): number => {
+    const { categoryId, amount, categorySnapshot, founderSnapshot } = entry;
+    const multiplier = categorySnapshot.multiplier;
+
+    switch (categoryId) {
+      case 'cash':
+      case 'expenses':
+        return amount * multiplier;
+      case 'expense_received':
+        return -(amount * multiplier); // Negative (subtracted from pie)
+      case 'time':
+        const hourlyGap = (founderSnapshot.marketSalary - founderSnapshot.paidSalary) / HOURS_PER_MONTH;
+        return hourlyGap * amount * multiplier;
+      case 'revenue':
+        const commission = (categorySnapshot.commissionPercent ?? 10) / 100;
+        return amount * commission * multiplier;
+      case 'intellectual_property':
+        return categorySnapshot.calculatedSlices ?? 0;
+      default:
+        return 0;
+    }
   };
 
   return (
@@ -82,6 +106,7 @@ export function EntriesTable({ entries, founders, categories, onRemoveEntry, cur
               <th className="px-4 py-3 font-medium">Founder</th>
               <th className="px-4 py-3 font-medium">Category</th>
               <th className="px-4 py-3 font-medium text-right">Amount</th>
+              <th className="px-4 py-3 font-medium text-right">Slices</th>
               <th className="px-4 py-3 font-medium">Description</th>
               <th className="px-4 py-3 font-medium w-16"></th>
             </tr>
@@ -89,7 +114,7 @@ export function EntriesTable({ entries, founders, categories, onRemoveEntry, cur
           <tbody className="divide-y divide-border">
             {filteredEntries.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">
+                <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">
                   {entries.length === 0
                     ? 'No entries yet. Add your first contribution above.'
                     : 'No entries match the current filters.'}
@@ -113,6 +138,9 @@ export function EntriesTable({ entries, founders, categories, onRemoveEntry, cur
                     </td>
                     <td className="px-4 py-3 text-right font-mono font-medium">
                       {formatAmount(entry)}
+                    </td>
+                    <td className="px-4 py-3 text-right font-mono font-semibold text-primary">
+                      {formatSlices(calculateEntrySlices(entry))}
                     </td>
                     <td className="px-4 py-3 text-sm text-muted-foreground max-w-xs truncate">
                       {entry.description || '—'}
