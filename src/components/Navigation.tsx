@@ -24,11 +24,9 @@ export function Navigation({ activeTab, onTabChange, onSignOut, isAdmin }: Navig
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <span className="text-lg font-bold">🥧</span>
-            </div>
+            <img src="/vritti-logo.png" alt="Vritti" className="h-9 w-9" />
             <div>
-              <h1 className="text-lg font-semibold tracking-tight">Slicing Pie</h1>
+              <h1 className="text-lg font-semibold tracking-tight">Vritti Pie</h1>
               <p className="text-xs text-muted-foreground">Equity Ledger</p>
             </div>
           </div>
