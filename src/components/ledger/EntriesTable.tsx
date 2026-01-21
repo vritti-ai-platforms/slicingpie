@@ -130,7 +130,7 @@ export function EntriesTable({ entries, founders, categories, onRemoveEntry, cur
                 return (
                   <tr key={entry.id} className="hover:bg-muted/30 transition-colors">
                     <td className="px-4 py-3 text-sm">
-                      {format(new Date(entry.date), 'dd MMM yyyy')}
+                      {format(entry.date, 'dd MMM yyyy')}
                     </td>
                     <td className="px-4 py-3 font-medium">{getFounderName(entry.founderId)}</td>
                     <td className="px-4 py-3">

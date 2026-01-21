@@ -89,7 +89,10 @@ export function useSlicingPie() {
         categoryId: e.category_id as CategoryId,
         amount: Number(e.amount),
         description: e.description || '',
-        date: new Date(e.date),
+        date: (() => {
+          const [y, m, d] = e.date.split('-').map(Number);
+          return new Date(y, m - 1, d);
+        })(),
         createdAt: new Date(e.created_at),
         createdBy: e.created_by,
         founderSnapshot: e.founder_snapshot as { marketSalary: number; paidSalary: number },
@@ -284,7 +287,7 @@ export function useSlicingPie() {
         category_id: categoryId,
         amount,
         description,
-        date: date.toISOString().split('T')[0],
+        date: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`,
         founder_snapshot: founderSnapshot,
         category_snapshot: categorySnapshot,
         created_by: user.id,
