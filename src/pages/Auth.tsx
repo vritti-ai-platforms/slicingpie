@@ -92,7 +92,7 @@ export default function Auth() {
     } else {
       toast({
         title: 'Account created!',
-        description: 'You can now start using Vritti Pie.',
+        description: 'You can now start using Vritti Slicing Pie.',
       });
     }
   };
@@ -103,7 +103,7 @@ export default function Auth() {
         <div className="text-center space-y-2">
           <div className="flex items-center justify-center gap-2">
             <img src="/vritti-logo.png" alt="Vritti" className="h-10 w-10" />
-            <h1 className="text-2xl font-bold">Vritti Pie</h1>
+            <h1 className="text-2xl font-bold">Vritti Slicing Pie</h1>
           </div>
           <p className="text-muted-foreground">
             Fair equity distribution for startups
