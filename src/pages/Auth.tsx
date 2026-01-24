@@ -71,31 +71,31 @@ export default function Auth() {
     }
   };
 
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateForm()) return;
-    
-    setIsLoading(true);
-    const { error } = await signUp(email, password, name);
-    setIsLoading(false);
+  // const handleSignUp = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   if (!validateForm()) return;
+  //
+  //   setIsLoading(true);
+  //   const { error } = await signUp(email, password, name);
+  //   setIsLoading(false);
 
-    if (error) {
-      const message = error.message.includes('User already registered')
-        ? 'This email is already registered. Please sign in instead.'
-        : error.message;
-      
-      toast({
-        title: 'Sign up failed',
-        description: message,
-        variant: 'destructive',
-      });
-    } else {
-      toast({
-        title: 'Account created!',
-        description: 'You can now start using Vritti Slicing Pie.',
-      });
-    }
-  };
+  //   if (error) {
+  //     const message = error.message.includes('User already registered')
+  //       ? 'This email is already registered. Please sign in instead.'
+  //       : error.message;
+  //
+  //     toast({
+  //       title: 'Sign up failed',
+  //       description: message,
+  //       variant: 'destructive',
+  //     });
+  //   } else {
+  //     toast({
+  //       title: 'Account created!',
+  //       description: 'You can now start using Vritti Slicing Pie.',
+  //     });
+  //   }
+  // };
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -113,15 +113,15 @@ export default function Auth() {
         <Card className="shadow-lg">
           <Tabs defaultValue="signin" className="w-full">
             <CardHeader className="pb-2">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-1">
                 <TabsTrigger value="signin" className="gap-2">
                   <LogIn className="h-4 w-4" />
                   Sign In
                 </TabsTrigger>
-                <TabsTrigger value="signup" className="gap-2">
+                {/* <TabsTrigger value="signup" className="gap-2">
                   <UserPlus className="h-4 w-4" />
                   Sign Up
-                </TabsTrigger>
+                </TabsTrigger> */}
               </TabsList>
             </CardHeader>
 
@@ -162,7 +162,7 @@ export default function Auth() {
                 </form>
               </TabsContent>
 
-              <TabsContent value="signup" className="mt-0">
+              {/* <TabsContent value="signup" className="mt-0">
                 <form onSubmit={handleSignUp} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="signup-name">Name</Label>
@@ -209,7 +209,7 @@ export default function Auth() {
                     First user will be assigned admin role
                   </p>
                 </form>
-              </TabsContent>
+              </TabsContent> */}
             </CardContent>
           </Tabs>
         </Card>
